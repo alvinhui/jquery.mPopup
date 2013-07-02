@@ -4,7 +4,7 @@
  * @requires jQuery v1.6 or later
  *
  * Examples at ......
- * License: ......
+ * License: MIT
  *
  * Copyright 2013 Alvin Xu - alvinxu@outlook.com
  *
@@ -21,11 +21,12 @@
             return (/OS 6(_\d)+/i).test(navigator.userAgent);
         };
     
-    var N = function(options, key){
+    var Mpopup = function(options, key){
         var PERFIX = '__m-popup';
         var SUFFIX = '__';
         var BUFFER = 20;
         var DEBOUNCE;
+        var CLOSS_BUTTON_CLASS = 'm_close';
         
         this.key = key;
         this.element = $;
@@ -50,8 +51,9 @@
             modalClass: 'm_modal',
             
             addCloseButton: true,
-            closeButtonClass: 'm_close', 
-            closeButtonHtml: '<a title="Close Modal Dialog" class="m_close always_allow" style="background: #dc1010; display: block; width: 17px;height: 17px; line-height: 17px;top: -8px; right: -8px; position: absolute; color: #fff; text-align: center; font-weight: bold; border-radius: 4px; font-size: 12px;" href="javascript:;">x</a>'
+            closeButtonClass: [], 
+            closeButtonTitle: 'Close Window',
+            closeButtonHtml: '<a title="" class="'+CLOSS_BUTTON_CLASS+'" style="background: #dc1010; display: block; width: 17px;height: 17px; line-height: 17px;top: -8px; right: -8px; position: absolute; color: #fff; text-align: center; font-weight: bold; border-radius: 4px; font-size: 12px;" href="javascript:;">x</a>'
         };
         
         this.opts = $.extend({}, this.defaults, options || {});
@@ -77,8 +79,9 @@
             {
                 for(var i in events)
                 {
-                    if($.isFunction(events[i]))
+                    if($.isFunction(events[i])){
                         events[i]();
+                    }
                 }
             }
 		};
@@ -88,8 +91,14 @@
             wrap.html(element);
             if(this.opts.addCloseButton)
             {
-                $(this.opts.closeButtonHtml).addClass(this.opts.closeButtonClass);
-                wrap.prepend(this.opts.closeButtonHtml);
+                var btEl = $(this.opts.closeButtonHtml);
+                if($.isArray(this.opts.closeButtonClass)){
+                    btEl.addClass(this.opts.closeButtonClass.join(' '));
+                }
+                if('string'===typeof(this.opts.closeButtonTitle)){
+                    btEl.attr('title', this.opts.closeButtonTitle);
+                }
+                wrap.prepend(btEl);
             }
             this.element = wrap;
         };
@@ -116,8 +125,9 @@
         this.show = function(){
             var self = this;
             
-            if ( ! this.opts.scrollBar)
+            if ( ! this.opts.scrollBar){
                 $('html').css('overflow', 'hidden');
+            }
             
             this.element.css({
                 'position': 'absolute', 
@@ -136,8 +146,9 @@
         this.hide = function(){
             var self = this;
             
-            if ( ! this.opts.scrollBar)
+            if ( ! this.opts.scrollBar){
                 $('html').css('overflow', 'auto');
+            }
             
             var afterClose = function(){
                 M.deleted(self.getKey());
@@ -207,13 +218,16 @@
         this.bindEvents = function(){
             var self = this;
             
-			this.element.delegate(
-                '.' + this.opts.closeButtonClass, 
-                'click.'+this.getId(), 
-                function(e) {
-                    self.close();
-                }
-            );
+            if(this.opts.addCloseButton)
+            {
+                this.element.delegate(
+                    '.' + CLOSS_BUTTON_CLASS, 
+                    'click.'+this.getId(), 
+                    function(e) {
+                        self.close();
+                    }
+                );
+            }
             
             if (this.opts.clickModalToClose) 
             {
@@ -243,8 +257,9 @@
                             );
                     }
             	}).bind('resize.'+this.getId(), function(){
-                    if($.isFunction(DEBOUNCE))
+                    if($.isFunction(DEBOUNCE)){
                         clearTimeout(DEBOUNCE);
+                    }
 
                     DEBOUNCE = setTimeout(function(){
                         if(self.isElementInsideWindow())
@@ -269,37 +284,47 @@
             if(this.opts.escClose) 
             {
                 D.bind('keydown.'+this.getId(), function(e){
-                    if(e.which === 27)
+                    if(e.which === 27){
                         self.close();
+                    }
                 });
             }
         };
         
         this.unbindEvents = function(){
-            this.element.undelegate(
-                '.' +this.opts.closeButtonClass, 
-                'click.'+this.getId(), 
-                this.close
-            );
+            if(this.opts.addCloseButton)
+            {
+                this.element.undelegate(
+                    '.' +CLOSS_BUTTON_CLASS, 
+                    'click.'+this.getId(), 
+                    this.close
+                );
+            }
                 
-            if(this.opts.clickModalToClose)
+            if(this.opts.clickModalToClose){
                 $('.'+this.opts.modalClass+'.'+this.getId()).unbind('click');
+            }
             
-            if( ! isIOS6X())
+            if( ! isIOS6X()){
                 W.unbind('scroll.'+this.getId()).unbind('resize.'+this.getId());
+            }
             
-            if(this.opts.escClose) 
+            if(this.opts.escClose){
                 D.unbind('keydown.'+this.getId());
+            }
         };
         
+        
+        // Provide external interfaces
         this.bindAll = function(events){
             for(var i in events)
                 this.bindOne(i, events[i]);
          };
         
         this.bindOne = function(event, fun){
-            if($.isFunction(fun))
+            if($.isFunction(fun)){
                 this.callback[event].push(fun);
+            }
          };
          
         this.open = function(element){
@@ -323,8 +348,6 @@
             this.rePostion();
             this.trigger('afterUpdate');
         };
-        
-        return this;
     };
         
     $.extend(M, {
@@ -338,10 +361,12 @@
         },
         _getPopup: function(k){
             var Popups = M._getPopups();
-            if(Object.prototype.toString.call(k) === '[object Number]') 
+            if(Object.prototype.toString.call(k) === '[object Number]'){
                 return Popups[k];
-            else 
+            }
+            else{
                 return Popups[Popups.length - 1];
+            }
         },
         _close: function(k, callback){
             if($.isFunction(k))
@@ -351,8 +376,9 @@
             }
     
             var nowPopup = this._getPopup(k);
-            if(nowPopup)
+            if(nowPopup){
                 nowPopup.close(callback);
+            }
         },
         _update: function(k, callback){
             if($.isFunction(k))
@@ -362,8 +388,9 @@
             }
     
             var nowPopup = this._getPopup(k);
-            if(nowPopup)
+            if(nowPopup){
                 nowPopup.update(callback);
+            }
         },
                 
         deleted: function(k){
@@ -373,7 +400,7 @@
         open: function(element, options){
             var Popups = M._getPopups();
             
-            var nowPopUp = new N(options, Popups.length);
+            var nowPopUp = new Mpopup(options, Popups.length);
             nowPopUp.bindAll(options.callback);
             nowPopUp.open(element);
             
