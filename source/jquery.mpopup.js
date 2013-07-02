@@ -1,12 +1,12 @@
 /*!
  * mPopup - jQuery Plugin
- * version: 0.1.0 (FIR, 31 May 2013)
+ * version: 0.2.0 (July, 2 May 2013)
  * @requires jQuery v1.6 or later
  *
- * Examples at ......
- * License: MIT
+ * https://github.com/alvinhui/jquery.mPopup
+ * License: MIT http://en.wikipedia.org/wiki/MIT_License
  *
- * Copyright 2013 Alvin Xu - alvinxu@outlook.com
+ * Author: Alvin Xu <alvinxu@outlook.com>
  *
  */
 
