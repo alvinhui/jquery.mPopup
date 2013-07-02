@@ -50,10 +50,12 @@
             clickModalToClose: true , 
             modalClass: 'm_modal',
             
+            closeClass: [],
+            
             addCloseButton: true,
             closeButtonClass: [], 
             closeButtonTitle: 'Close Window',
-            closeButtonHtml: '<a title="" class="'+CLOSS_BUTTON_CLASS+'" style="background: #dc1010; display: block; width: 17px;height: 17px; line-height: 17px;top: -8px; right: -8px; position: absolute; color: #fff; text-align: center; font-weight: bold; border-radius: 4px; font-size: 12px;" href="javascript:;">x</a>'
+            closeButtonHtml: '<a title="" class="'+CLOSS_BUTTON_CLASS+'" style="background: #dc1010; display: block; width: 17px;height: 17px; line-height: 17px;top: -8px; right: -8px; position: absolute; color: #fff; text-align: center; font-weight: bold; border-radius: 4px; font-size: 12px; text-decoration: none;" href="javascript:;">x</a>'
         };
         
         this.opts = $.extend({}, this.defaults, options || {});
@@ -86,21 +88,44 @@
             }
 		};
         
-        this.setElement = function(element){
-            var wrap = $('<div class="bpopup_wrap '+this.opts.wrapClass+'"></div>');
-            wrap.html(element);
-            if(this.opts.addCloseButton)
+        this.setElement = function(param){
+            var isJquery = 'object'===typeof(param) && param instanceof $ && param.length>0;
+            var isString = 'string'===typeof(param);
+            var isElement = 'object'===typeof(param) && 1===param.nodeType;
+            
+            if(isJquery || isString || isElement)
             {
-                var btEl = $(this.opts.closeButtonHtml);
-                if($.isArray(this.opts.closeButtonClass)){
-                    btEl.addClass(this.opts.closeButtonClass.join(' '));
+                var jqueryElement;
+                if(isJquery){
+                    jqueryElement = param.clone(true);
                 }
-                if('string'===typeof(this.opts.closeButtonTitle)){
-                    btEl.attr('title', this.opts.closeButtonTitle);
+                else if(isElement){
+                    jqueryElement = $(param);
                 }
-                wrap.prepend(btEl);
+                else
+                    jqueryElement = $('<div>'+param+'</div>');
+               
+                jqueryElement.css({'display': 'block', 'visibility': 'visible'});
+                
+                var wrap = $('<div class="bpopup_wrap '+this.opts.wrapClass+'"></div>');
+                wrap.html(jqueryElement);
+                
+                if(this.opts.addCloseButton)
+                {
+                    var btEl = $(this.opts.closeButtonHtml);
+                    if($.isArray(this.opts.closeButtonClass) && this.opts.closeButtonClass.length>0){
+                        btEl.addClass(this.opts.closeButtonClass.join(' '));
+                    }
+                    if('string'===typeof(this.opts.closeButtonTitle)){
+                        btEl.attr('title', this.opts.closeButtonTitle);
+                    }
+                    wrap.prepend(btEl);
+                }
+                this.element = wrap;
             }
-            this.element = wrap;
+            else{
+                throw('Incoming parameter must be a string or an Jquery Element.');
+            }
         };
         
         this.appendWrap = function(){
@@ -123,6 +148,7 @@
         };
         
         this.show = function(){
+            this.trigger('beforeOpen');
             var self = this;
             
             if ( ! this.opts.scrollBar){
@@ -132,15 +158,39 @@
             this.element.css({
                 'position': 'absolute', 
                 'backgroundColor': '#fff', 
+                'display': 'none',
                 'padding': this.opts.padding,
                 'z-index': parseInt(this.opts.zIndex) + this.getKey()  + 1
-            }).appendTo(this.opts.appendTo);;
-    
-            this.element.stop().fadeTo(this.opts.speed, true, function(){
-                self.trigger('afterOpen');
+            }).appendTo(this.opts.appendTo);
+            
+            var ct = 0;
+            
+            var run = function(){
                 self.rePostion();
-                self.bindEvents();
-            });
+                self.element.stop().fadeTo(self.opts.speed, true, function(){
+                    self.trigger('afterOpen');
+                    self.bindEvents();
+                });
+            };
+            
+            var setTimeoutToCheck = function(){
+                if(6>ct)
+                {
+                    ct++;
+                    setTimeout(function(){
+                        if(self.isRenderReady()){
+                           run();
+                        }
+                        else{
+                            setTimeoutToCheck();
+                        }
+                    }, 500);
+                }
+                else{
+                    run();
+                }
+            };
+            setTimeoutToCheck();
         };
         
         this.hide = function(){
@@ -168,6 +218,10 @@
                     else
                         afterClose();
                 });
+        };
+        
+        this.isRenderReady = function(){
+            return this.getElementWidth() > 0 && this.getElementHeight() > 0;
         };
 
         this.rePostion = function(){
@@ -221,7 +275,7 @@
             if(this.opts.addCloseButton)
             {
                 this.element.delegate(
-                    '.' + CLOSS_BUTTON_CLASS, 
+                    '.' + CLOSS_BUTTON_CLASS+this._getCloseClassString(), 
                     'click.'+this.getId(), 
                     function(e) {
                         self.close();
@@ -295,7 +349,7 @@
             if(this.opts.addCloseButton)
             {
                 this.element.undelegate(
-                    '.' +CLOSS_BUTTON_CLASS, 
+                    '.' +CLOSS_BUTTON_CLASS+this._getCloseClassString(), 
                     'click.'+this.getId(), 
                     this.close
                 );
@@ -314,6 +368,16 @@
             }
         };
         
+        this._getCloseClassString = function(){
+            var str = '';
+            if($.isArray(this.opts.closeClass) && this.opts.closeClass.length>0)
+            {
+                 var delimiter = ', .';
+                 str = delimiter+this.opts.closeClass.join(delimiter);
+            }
+            return str;
+        };
+        
         
         // Provide external interfaces
         this.bindAll = function(events){
@@ -330,9 +394,6 @@
         this.open = function(element){
             this.setElement(element);
             this.appendWrap();
-            
-            this.trigger('beforeOpen');
-            
             this.show();
          };
          
@@ -401,7 +462,9 @@
             var Popups = M._getPopups();
             
             var nowPopUp = new Mpopup(options, Popups.length);
-            nowPopUp.bindAll(options.callback);
+            if('object'===typeof(options) && $.isArray(options.callback) && options.callback.length>0){
+                nowPopUp.bindAll(options.callback);
+            }
             nowPopUp.open(element);
             
             Popups.push(nowPopUp);
