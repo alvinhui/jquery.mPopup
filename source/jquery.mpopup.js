@@ -462,7 +462,7 @@
             var Popups = M._getPopups();
             
             var nowPopUp = new Mpopup(options, Popups.length);
-            if('object'===typeof(options) && $.isArray(options.callback) && options.callback.length>0){
+            if('object'===typeof(options) && 'object'===typeof(options.callback) && ! $.isEmptyObject(options.callback)){
                 nowPopUp.bindAll(options.callback);
             }
             nowPopUp.open(element);
