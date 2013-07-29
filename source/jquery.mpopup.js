@@ -55,7 +55,7 @@
             addCloseButton: true,
             closeButtonClass: [], 
             closeButtonTitle: 'Close Window',
-            closeButtonHtml: '<a title="" class="'+CLOSS_BUTTON_CLASS+'" style="background: #dc1010; display: block; width: 17px;height: 17px; line-height: 17px;top: -8px; right: -8px; position: absolute; color: #fff; text-align: center; font-weight: bold; border-radius: 4px; font-size: 12px; text-decoration: none;" href="javascript:;">x</a>'
+            closeButtonHtml: '<a title="" class="'+CLOSS_BUTTON_CLASS+'" style="background: #dc1010; display: block; width: 17px;height: 17px; line-height: 17px;top: -8px; right: -8px; position: absolute; z-index: 2; color: #fff; text-align: center; font-weight: bold; border-radius: 4px; font-size: 12px; text-decoration: none;" href="javascript:;">x</a>'
         };
         
         this.opts = $.extend({}, this.defaults, options || {});
