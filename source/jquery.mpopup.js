@@ -64,7 +64,8 @@
             'afterOpen': [],
             'beforeClose': [],
             'afterClose': [],
-            'afterUpdate': []
+            'afterUpdate': [],
+            'afterClickCloseButton': []
         };
 
         this.getId = function(){
@@ -79,12 +80,19 @@
             var events = this.callback[event];
             if($.isArray(events) && events.length>0)
             {
+                var result = true;
                 for(var i in events)
                 {
                     if($.isFunction(events[i])){
-                        events[i]();
+                        var ret = events[i](this);
+                        if( ret !== undefined ) {
+                            if( ret === false ) {
+                                result = false;
+                            }
+                        }
                     }
                 }
+                return result;
             }
 		};
         
@@ -278,7 +286,10 @@
                     '.' + CLOSS_BUTTON_CLASS+this._getCloseClassString(), 
                     'click.'+this.getId(), 
                     function(e) {
-                        self.close();
+                        var ret = self.trigger('afterClickCloseButton');
+                        if( ret !== false ) {
+                            self.close();
+                        }
                     }
                 );
             }
@@ -381,12 +392,13 @@
         
         // Provide external interfaces
         this.bindAll = function(events){
-            for(var i in events)
+            for(var i in events){
                 this.bindOne(i, events[i]);
+            }
          };
         
         this.bindOne = function(event, fun){
-            if($.isFunction(fun)){
+            if($.isFunction(fun) && $.isArray(this.callback[event])){
                 this.callback[event].push(fun);
             }
          };
