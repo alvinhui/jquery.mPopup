@@ -84,7 +84,7 @@
                 for(var i in events)
                 {
                     if($.isFunction(events[i])){
-                        var ret = events[i](this);
+                        var ret = events[i].apply(this);
                         if( ret !== undefined ) {
                             if( ret === false ) {
                                 result = false;
